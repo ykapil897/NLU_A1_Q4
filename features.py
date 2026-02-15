@@ -1,95 +1,108 @@
 import math
 from collections import defaultdict
 
-# ------------------------
-# BUILD VOCAB (LIMITED)
-# ------------------------
-def build_vocab(tokenized_texts, max_features=1500):
-    word_freq = {}
 
-    for tokens in tokenized_texts:
+def build_vocab(all_tokens, max_features=1500):
+
+    freq = {}
+
+    for tokens in all_tokens:
         for word in tokens:
-            word_freq[word] = word_freq.get(word, 0) + 1
+            if word in freq:
+                freq[word] += 1
+            else:
+                freq[word] = 1
 
-    sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+    # sort by frequency
+    sorted_words = sorted(freq.items(), key=lambda item: item[1], reverse=True)
 
     vocab = {}
-    for i, (word, _) in enumerate(sorted_words[:max_features]):
+    for i in range(min(max_features, len(sorted_words))):
+        word = sorted_words[i][0]
         vocab[word] = i
 
     return vocab
 
 
-# ------------------------
-# SPARSE BOW
-# ------------------------
 def vectorize_bow(tokens, vocab):
-    vec = {}
+
+    vector = {}
+
     for word in tokens:
         if word in vocab:
-            idx = vocab[word]
-            vec[idx] = vec.get(idx, 0) + 1
-    return vec
+            index = vocab[word]
+            if index in vector:
+                vector[index] += 1
+            else:
+                vector[index] = 1
+
+    return vector
 
 
-# ------------------------
-# SPARSE TF
-# ------------------------
 def vectorize_tf(tokens, vocab):
-    vec = {}
-    total = len(tokens)
+
+    vector = {}
+    length = len(tokens)
 
     for word in tokens:
         if word in vocab:
-            idx = vocab[word]
-            vec[idx] = vec.get(idx, 0) + 1
+            index = vocab[word]
+            if index in vector:
+                vector[index] += 1
+            else:
+                vector[index] = 1
 
-    for k in vec:
-        vec[k] = vec[k] / total
+    # normalize
+    if length > 0:
+        for index in vector:
+            vector[index] = vector[index] / length
 
-    return vec
+    return vector
 
 
-# ------------------------
-# IDF
-# ------------------------
-def compute_idf(tokenized_texts, vocab):
-    N = len(tokenized_texts)
-    df = defaultdict(int)
+def compute_idf(all_tokens, vocab):
 
-    for tokens in tokenized_texts:
+    total_docs = len(all_tokens)
+    doc_freq = defaultdict(int)
+
+    for tokens in all_tokens:
         seen = set()
         for word in tokens:
             if word in vocab and word not in seen:
-                df[word] += 1
+                doc_freq[word] += 1
                 seen.add(word)
 
-    idf = {}
+    idf_values = {}
+
     for word in vocab:
-        idf[word] = math.log(N / (1 + df[word]))
+        df = doc_freq[word]
+        idf_values[word] = math.log(total_docs / (1 + df))
 
-    return idf
-
-
-# ------------------------
-# SPARSE TF-IDF
-# ------------------------
-def vectorize_tfidf(tokens, vocab, idf):
-    vec = vectorize_tf(tokens, vocab)
-
-    for word in tokens:
-        if word in vocab:
-            idx = vocab[word]
-            vec[idx] = vec[idx] * idf[word]
-
-    return vec
+    return idf_values
 
 
-# ------------------------
-# BIGRAMS
-# ------------------------
+def vectorize_tfidf(tokens, vocab, idf_values):
+
+    tf_vector = vectorize_tf(tokens, vocab)
+    tfidf_vector = {}
+
+    for index in tf_vector:
+        # need reverse lookup from index → word
+        # so we reconstruct word from vocab
+        for word in vocab:
+            if vocab[word] == index:
+                tfidf_vector[index] = tf_vector[index] * idf_values[word]
+                break
+
+    return tfidf_vector
+
+
 def generate_bigrams(tokens):
-    bigrams = []
-    for i in range(len(tokens)-1):
-        bigrams.append(tokens[i] + "_" + tokens[i+1])
-    return tokens + bigrams
+
+    combined = list(tokens)
+
+    for i in range(len(tokens) - 1):
+        bigram = tokens[i] + "_" + tokens[i + 1]
+        combined.append(bigram)
+
+    return combined

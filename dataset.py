@@ -1,28 +1,36 @@
-def load_dataset(filepath, max_samples=1000):
+def load_dataset(path, limit=1000):
+
     texts = []
     labels = []
 
-    with open(filepath, "r", encoding="utf-8") as f:
-        next(f)  # skip header
+    with open(path, "r", encoding="utf-8") as file:
 
-        count = 0
-        for line in f:
+        # skip first line (header)
+        header = file.readline()
 
-            parts = line.strip().split(",", 1)
-            if len(parts) != 2:
+        for line in file:
+
+            if len(texts) >= limit:
+                break
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            parts = line.split(",", 1)
+            if len(parts) < 2:
                 continue
 
             category = parts[0].strip()
-            text = parts[1].strip()
+            content = parts[1].strip()
 
             if category == "sport":
-                texts.append(text)
+                texts.append(content)
                 labels.append(0)
-                count += 1
 
             elif category == "politics":
-                texts.append(text)
+                texts.append(content)
                 labels.append(1)
-                count += 1
 
     return texts, labels

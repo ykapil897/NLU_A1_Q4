@@ -1,40 +1,64 @@
 import math
 from collections import defaultdict
 
+
 class NaiveBayes:
 
-    def train(self, X, y):
+    def __init__(self):
         self.class_counts = defaultdict(int)
-        self.feature_counts = {}
-        self.total_feature_count = {}
+        self.word_counts = {}
+        self.total_words = {}
+        self.num_docs = 0
+        self.vocab_size = 0
 
-        for c in set(y):
-            self.feature_counts[c] = defaultdict(float)
-            self.total_feature_count[c] = 0
+    def train(self, X, y):
 
-        # Count frequencies
+        self.num_docs = len(X)
+
+        classes = set(y)
+
+        for label in classes:
+            self.word_counts[label] = defaultdict(float)
+            self.total_words[label] = 0
+
         for i in range(len(X)):
-            c = y[i]
-            self.class_counts[c] += 1
 
-            for idx, value in X[i].items():
-                self.feature_counts[c][idx] += value
-                self.total_feature_count[c] += value
+            label = y[i]
+            self.class_counts[label] += 1
 
-        self.total_docs = len(X)
-        self.vocab_size = len({idx for x in X for idx in x})
+            for index, value in X[i].items():
+                self.word_counts[label][index] += value
+                self.total_words[label] += value
 
-    def predict(self, x):
-        scores = {}
+        # count unique feature indices seen in training data
+        all_indices = set()
+        for sample in X:
+            for index in sample:
+                all_indices.add(index)
 
-        for c in self.class_counts:
-            log_prob = math.log(self.class_counts[c] / self.total_docs)
+        self.vocab_size = len(all_indices)
 
-            for idx, value in x.items():
-                word_count = self.feature_counts[c].get(idx, 0) + 1
-                total = self.total_feature_count[c] + self.vocab_size
-                log_prob += value * math.log(word_count / total)
+    def predict(self, sample):
 
-            scores[c] = log_prob
+        best_label = None
+        best_score = None
 
-        return max(scores, key=scores.get)
+        for label in self.class_counts:
+
+            # prior probability
+            score = math.log(self.class_counts[label] / self.num_docs)
+
+            for index, value in sample.items():
+
+                count = self.word_counts[label].get(index, 0)
+                count += 1  # Laplace smoothing
+
+                total = self.total_words[label] + self.vocab_size
+
+                score += value * math.log(count / total)
+
+            if best_score is None or score > best_score:
+                best_score = score
+                best_label = label
+
+        return best_label

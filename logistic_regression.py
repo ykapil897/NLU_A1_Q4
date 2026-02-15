@@ -2,32 +2,52 @@ import math
 
 class LogisticRegression:
 
-    def __init__(self, lr=0.01, epochs=8):
-        self.lr = lr
-        self.epochs = epochs
-
-    def sigmoid(self, z):
-        if z < -500:
-            return 0
-        return 1 / (1 + math.exp(-z))
-
-    def train(self, X, y):
+    def __init__(self, learning_rate=0.01, num_epochs=8):
+        self.learning_rate = learning_rate
+        self.num_epochs = num_epochs
         self.weights = {}
 
-        for _ in range(self.epochs):
+    def _sigmoid(self, value):
+        # simple protection against overflow
+        if value < -500:
+            return 0
+        return 1.0 / (1.0 + math.exp(-value))
+
+    def train(self, X, y):
+
+        for epoch in range(self.num_epochs):
+
             for i in range(len(X)):
-                z = 0
-                for idx, val in X[i].items():
-                    z += self.weights.get(idx, 0) * val
 
-                pred = self.sigmoid(z)
-                error = y[i] - pred
+                sample = X[i]
+                label = y[i]
 
-                for idx, val in X[i].items():
-                    self.weights[idx] = self.weights.get(idx, 0) + self.lr * error * val
+                score = 0
 
-    def predict(self, x):
-        z = 0
-        for idx, val in x.items():
-            z += self.weights.get(idx, 0) * val
-        return 1 if self.sigmoid(z) >= 0.5 else 0
+                # compute dot product
+                for index in sample:
+                    weight = self.weights.get(index, 0)
+                    score += weight * sample[index]
+
+                prediction = self._sigmoid(score)
+                difference = label - prediction
+
+                # update only features present
+                for index in sample:
+                    current = self.weights.get(index, 0)
+                    self.weights[index] = current + self.learning_rate * difference * sample[index]
+
+    def predict(self, sample):
+
+        score = 0
+
+        for index in sample:
+            weight = self.weights.get(index, 0)
+            score += weight * sample[index]
+
+        prob = self._sigmoid(score)
+
+        if prob >= 0.5:
+            return 1
+        else:
+            return 0
