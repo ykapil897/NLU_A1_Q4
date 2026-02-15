@@ -210,5 +210,5 @@ To change feature representation, modify the vectorization line inside <code>mai
 
 <h2>Author</h2>
 <p>
-Implemented entirely from scratch for academic submission.
+Implemented entirely for academic submission.
 </p>
