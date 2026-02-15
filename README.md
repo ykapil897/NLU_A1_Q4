@@ -1,4 +1,4 @@
-<h1>Sports vs Politics Text Classification (From Scratch)</h1>
+<h1>Sports vs Politics Text Classification</h1>
 
 <h2>Project Overview</h2>
 <p>
